@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     char      operands[MAX_LINE_LEN];    /* everything after the mnemonic      */
     uint32_t  word;                      //encoded 32-bit instruction word
     
-    Simulator sim;
+    Simulator cpu1, cpu2;
 
 
 //Parsing section
@@ -145,12 +145,27 @@ int main(int argc, char **argv)
     //Simulator section to test the following
     //2) have a structure for input parameters of the computer thats running like clock rate and instructions per cycle, the math stuff, along with what structure the pipeline will have
 
+    init_simulator(&cpu1);
+    init_simulator(&cpu2);
 
-    init_simulator(&sim);
+    cpu1.params.pipeline_depth = 1;
+    cpu2.params.pipeline_depth = 5;
+    cpu2.params.enable_forwarding = 1;
+    
+    Program program;
+    program.instr_count = count;
+    for (int i = 0; i < count && i < MAX_INSTR; i++) {
+        program.instr_words[i] = memory[i];
+    }
 
-    print_cpu_params(&sim.params);
-    print_pipeline_state(&sim.pipe);
-    print_metrics(&sim.metrics);
+        cpu1.metrics.instruction_count = count;
+        cpu2.metrics.instruction_count = count;
+    print_cpu_params(&cpu1.params);
+    print_pipeline_state(&cpu1.pipe);
+    print_metrics(&cpu1.metrics);
+
+    print_cpu_params(&cpu2.params);
+ 
 //run through the instructions with given input
 //each instruction needs to look 5 ahead i think since there are 5 steps for each
 
