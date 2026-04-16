@@ -1,47 +1,25 @@
 //Tien Hoang
-
-
 #ifndef CPUPARAMETERS_H
 #define CPUPARAMETERS_H
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
+#include "decode.h"
 
 #define REG_COUNT 32
 #define MEM_SIZE 256
 #define MAX_INSTR 100
 
-
-//This part needs to be updated
-typedef enum {
-    OP_ADD,
-    OP_SUB,
-    OP_ADDI,
-    OP_LW,
-    OP_SW,
-    OP_BEQ,
-    OP_NOP,
-    OP_INVALID
-} OpCode;
-
 typedef struct {
-    OpCode op;
-    int rs;
-    int rt;
-    int rd;
-    int imm;
-    char label[32];
-} Instruction;
-
-typedef struct {
-    Instruction instr_mem[MAX_INSTR];
+    uint32_t instr_words[MAX_INSTR];
     int instr_count;
 } Program;
 
 typedef struct {
-    int pc;
-    int reg[REG_COUNT];
-    int mem[MEM_SIZE];
+    uint32_t pc;
+    int32_t reg[REG_COUNT];
+    int32_t mem[MEM_SIZE];
 } CPUState;
 
 typedef struct {
@@ -49,6 +27,9 @@ typedef struct {
     int pipeline_depth;
     int single_cycle_ipc;
     int pipelined_ipc;
+    int branch_penalty;
+    int enable_forwarding;
+    int enable_hazard_detection;
 } CPUParams;
 
 typedef struct {
@@ -66,39 +47,48 @@ typedef struct {
 } PerformanceMetrics;
 
 typedef struct {
+    uint32_t raw;
+    uint32_t opcode;
+    uint32_t rs;
+    uint32_t rt;
+    uint32_t rd;
+    uint32_t shamt;
+    uint32_t funct;
+    int16_t  imm;
+    uint32_t address;
     int valid;
-    int pc;
-    Instruction instr;
+} DecodedInstr;
+
+typedef struct {
+    int valid;
+    uint32_t pc;
+    uint32_t instr_word;
 } IF_ID_Reg;
 
 typedef struct {
     int valid;
-    int pc;
-    Instruction instr;
-
-    int rs_value;
-    int rt_value;
-    int imm;
+    uint32_t pc;
+    DecodedInstr instr;
+    int32_t rs_value;
+    int32_t rt_value;
 } ID_EX_Reg;
 
 typedef struct {
     int valid;
-    int pc;
-    Instruction instr;
-
-    int alu_result;
-    int rt_value;
+    uint32_t pc;
+    DecodedInstr instr;
+    int32_t alu_result;
+    int32_t rt_value;
     int branch_taken;
-    int branch_target;
+    uint32_t branch_target;
 } EX_MEM_Reg;
 
 typedef struct {
     int valid;
-    int pc;
-    Instruction instr;
-
-    int mem_data;
-    int alu_result;
+    uint32_t pc;
+    DecodedInstr instr;
+    int32_t mem_data;
+    int32_t alu_result;
 } MEM_WB_Reg;
 
 typedef struct {
@@ -121,9 +111,10 @@ void init_metrics(PerformanceMetrics *m);
 void init_pipeline_state(PipelineState *p);
 void init_simulator(Simulator *sim);
 
-const char *opcode_name(OpCode op);
+DecodedInstr decode_word(uint32_t word);
 void print_cpu_params(const CPUParams *params);
 void print_pipeline_state(const PipelineState *p);
 void print_metrics(const PerformanceMetrics *m);
 
 #endif
+
